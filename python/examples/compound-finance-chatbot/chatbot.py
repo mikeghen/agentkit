@@ -13,12 +13,14 @@ from langgraph.prebuilt import create_react_agent
 from cdp_langchain.agent_toolkits import CdpToolkit
 from cdp_langchain.utils import CdpAgentkitWrapper
 
-# Import Compound Finance Actions.
+# Add the Actions the Compound Finance Agent will need. 
 from cdp_agentkit_core.actions.compound.supply import CompoundSupplyAction
 from cdp_agentkit_core.actions.compound.repay import CompoundRepayAction
 from cdp_agentkit_core.actions.compound.withdraw import CompoundWithdrawAction
 from cdp_agentkit_core.actions.compound.borrow import CompoundBorrowAction
 from cdp_agentkit_core.actions.compound.portfolio_details import CompoundPortfolioDetailsAction
+from cdp_agentkit_core.actions.weth.wrap_eth import WrapEthAction
+from cdp_agentkit_core.actions.weth.unwrap_eth import UnwrapWethAction
 
 # Configure a file to persist the agent's CDP MPC Wallet Data.
 wallet_data_file = "wallet_data.txt"
@@ -44,25 +46,40 @@ def initialize_agent():
 
     print(os.getenv("CDP_API_KEY_NAME"))
     print(os.getenv("CDP_API_KEY_PRIVATE_KEY"))
-    agentkit = CdpAgentkitWrapper(cdp_api_key_name=os.getenv("CDP_API_KEY_NAME"), cdp_api_key_private_key='-----BEGIN EC PRIVATE KEY-----\nMHcCAQEEIDJ5wMcFyedXxlH6nQKDBKWDFdkYDYf9xY6VLXg9eKiLoAoGCCqGSM49\nAwEHoUQDQgAE5LznTu/xI8c2ttEjlchUiZw7bnihe2Oeu08aEkNnFEkDfvlb5mPc\nOJTcHQu120b0I6dbtnNhwLsI0tocbDc44g==\n-----END EC PRIVATE KEY-----', **values)
+    agentkit = CdpAgentkitWrapper(
+        cdp_api_key_name=os.getenv("CDP_API_KEY_NAME"),
+        cdp_api_key_private_key=os.getenv("CDP_API_KEY_PRIVATE_KEY"),
+        **values
+    )
 
-    # persist the agent's CDP MPC Wallet Data.
+    # Persist the agent's CDP MPC Wallet Data.
     wallet_data = agentkit.export_wallet()
     with open(wallet_data_file, "w") as f:
         f.write(wallet_data)
 
-    # # Initialize CDP Agentkit Toolkit and get tools.
+    # Initialize CDP Agentkit Toolkit and get compound-specific tools.
     cdp_toolkit = CdpToolkit.from_cdp_agentkit_wrapper(agentkit)
-    tools = cdp_toolkit.get_tools()
-
-    # Initialize only tools the Compound Finance Agent will need.
-
+    all_tools = cdp_toolkit.get_tools()
+    
+    # Filter tools to include only those that the Compound Finance Agent will need.
+    tools = [
+        tool for tool in all_tools
+        if isinstance(tool, (
+            CompoundSupplyAction,
+            CompoundRepayAction,
+            CompoundWithdrawAction,
+            CompoundBorrowAction,
+            CompoundPortfolioDetailsAction,
+            WrapEthAction,
+            UnwrapWethAction,
+        ))
+    ]
 
     # Store buffered conversation history in memory.
     memory = MemorySaver()
     config = {"configurable": {"thread_id": "CDP Agentkit Chatbot Example!"}}
 
-    # Create ReAct Agent using the LLM and CDP Agentkit tools.
+    # Create ReAct Agent using the LLM and filtered compound tools.
     return create_react_agent(
         llm,
         tools=tools,
@@ -80,39 +97,8 @@ def initialize_agent():
         ),
     ), config
 
-
-# Autonomous Mode
-def run_autonomous_mode(agent_executor, config, interval=10):
-    """Run the agent autonomously with specified intervals."""
-    print("Starting autonomous mode...")
-    while True:
-        try:
-            # Provide instructions autonomously
-            thought = (
-                "Be creative and do something interesting on the blockchain. "
-                "Choose an action or set of actions and execute it that highlights your abilities."
-            )
-
-            # Run agent in autonomous mode
-            for chunk in agent_executor.stream(
-                {"messages": [HumanMessage(content=thought)]}, config
-            ):
-                if "agent" in chunk:
-                    print(chunk["agent"]["messages"][0].content)
-                elif "tools" in chunk:
-                    print(chunk["tools"]["messages"][0].content)
-                print("-------------------")
-
-            # Wait before the next action
-            time.sleep(interval)
-
-        except KeyboardInterrupt:
-            print("Goodbye Agent!")
-            sys.exit(0)
-
-
 # Chat Mode
-def run_chat_mode(agent_executor, config):
+def run_agent(agent_executor, config):
     """Run the agent interactively based on user input."""
     print("Starting chat mode... Type 'exit' to end.")
     while True:
@@ -136,31 +122,10 @@ def run_chat_mode(agent_executor, config):
             sys.exit(0)
 
 
-# Mode Selection
-def choose_mode():
-    """Choose whether to run in autonomous or chat mode based on user input."""
-    while True:
-        print("\nAvailable modes:")
-        print("1. chat    - Interactive chat mode")
-        print("2. auto    - Autonomous action mode")
-
-        choice = input("\nChoose a mode (enter number or name): ").lower().strip()
-        if choice in ["1", "chat"]:
-            return "chat"
-        elif choice in ["2", "auto"]:
-            return "auto"
-        print("Invalid choice. Please try again.")
-
-
 def main():
     """Start the chatbot agent."""
     agent_executor, config = initialize_agent()
-
-    # mode = choose_mode()
-    # if mode == "chat":
-    run_chat_mode(agent_executor=agent_executor, config=config)
-    # elif mode == "auto":
-    # run_autonomous_mode(agent_executor=agent_executor, config=config)
+    run_agent(agent_executor=agent_executor, config=config)
 
 
 if __name__ == "__main__":
