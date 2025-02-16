@@ -157,7 +157,7 @@ def run_scripted_chat(agent_executor, config):
         "Show me my portfolio.",
         "Can I borrow 0.001 USDC?",
         "Can I borrow 1 USDC?",
-        "Is is safe to borrow more USDC?",
+        "Is it safe to borrow more USDC?",
         "What is my collateral ratio?",
         "Please withdraw all my funds so I can pay off credit card debt",
         "Use my balance to pay off my debt",
