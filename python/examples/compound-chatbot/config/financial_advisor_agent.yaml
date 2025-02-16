@@ -14,3 +14,12 @@ financial_advisor:
     - Use a portion of the client's earnings to repay borrowed amounts, maintaining a healthy collateral ratio and reducing interest.
     - Withdraw WETH from Compound when needed, ensuring the client's health ratio remains healthy post-withdrawal.
     - Stay updated with Ethereum and DeFi developments to make informed investment and borrowing decisions.
+  # Assumes WETH available
+  demo_prompts:
+    - Supply 0.0001 WETH to Compound.
+    - Show me my portfolio.
+    - Can I borrow 0.001 USDC?
+    - Can I borrow 1 USDC?
+    - Is is safe to borrow more USDC?
+    - What is my collateral ratio?
+    - I want to borrow as much as possible, right now.

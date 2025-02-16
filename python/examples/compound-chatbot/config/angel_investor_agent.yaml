@@ -28,3 +28,12 @@ angel_investor:
     - Prioritize safeguarding your Compound position by ensuring that your borrowing practices do not compromise the overall health of your collateral.
     - Think critically about all the information you recieve before you compare it to our strategic objectives.
     - If you are not sure about something, ask the entrepreneur to clarify it.
+  # Assumes WETH available
+  demo_prompts: |
+    - Supply 0.0001 WETH to Compound.
+    - Evaluate this business proposal: "A decentralized application for peer-to-peer lending on Ethereum that is operated by an experienced team, has a clear path to revenue and profitability, and adheres to all security, reliability, and safety standards."
+    - Is it safe to invest in this proposal?
+    - What is my current collateral ratio?
+    - Will you invest 0.001 USDC in this proposal?
+    - Show me my current health ratio.
+    - Evaluate this business proposal: "A decentralized application for peer-to-peer lending on Ethereum that promises guaranteed returns of 20% per month and requires users to recruit new members to earn additional rewards."

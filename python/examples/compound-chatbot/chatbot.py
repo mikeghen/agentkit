@@ -72,9 +72,9 @@ def initialize_agent():
         fa_config = yaml.safe_load(yaml_file)
     advisor = fa_config.get("financial_advisor", {})
     state_prompt = (
-        f"Role: {advisor.get('role', '')}\n\n"
-        f"Goal: {advisor.get('goal', '')}\n\n"
-        f"Financial Plan: {advisor.get('financial_plan', '')}"
+        f"{advisor.get('role', '')}\n"
+        f"{advisor.get('goal', '')}\n"
+        f"{advisor.get('financial_plan', '')}"
     )
 
     # Use langchain tools from Agentkit.
@@ -85,12 +85,12 @@ def initialize_agent():
     config = {"configurable": {"thread_id": "CDP Agentkit Chatbot Example!"}}
 
     # Create ReAct Agent using the LLM and CDP Agentkit tools.
-    # Pass the state_prompt read from YAML as a tuple element.
+    # Pass the state_prompt read from YAML directly as a string.
     return create_react_agent(
         llm,
         tools=tools,
         checkpointer=memory,
-        state_modifier=(state_prompt,),
+        state_modifier=state_prompt,
     ), config
 
 
@@ -128,13 +128,13 @@ def run_autonomous_mode(agent_executor, config, interval=10):
 def run_scripted_chat(agent_executor, config):
     """Run the agent with predefined prompts."""
     prompts = [
-        "Get ETH",
-        "Wrap 0.0001 ETH to WETH",
-        "Supply 0.0001 WETH to Compound",
-        "Borrow 0.001 USDC from Compound",
+        "Get ETH from the faucet", # Gives you 0.0001 ETH
+        "Wrap 0.00005 ETH to WETH",
+        "Supply 0.00005 WETH to Compound",
+        "Borrow 0.00005 USDC from Compound",
         "Get my Compound portfolio details",
-        "Repay 0.001 USDC from Compound",
-        "Withdraw 0.0001 WETH from Compound"
+        "Repay 0.00005 USDC from Compound",
+        "Withdraw 0.00005 WETH from Compound"
     ]
 
     print("Running scripted prompts...")
