@@ -7,13 +7,13 @@ from pydantic import BaseModel, Field
 class ExactInputSingleSchema(BaseModel):
     """Input schema for performing an exact input swap on Uniswap v3."""
 
-    token_in: Literal["weth", "cbeth", "cbbtc", "wsteth", "usdc"] = Field(
+    token_in: Literal["weth", "cbeth", "cbbtc", "wsteth", "usdc", "aero"] = Field(
         ...,
-        description="The asset ID to swap from, one of `weth`, `cbeth`, `cbbtc`, `wsteth`, or `usdc`",
+        description="The asset ID to swap from, one of `weth`, `cbeth`, `cbbtc`, `wsteth`, `usdc`, or `aero`",
     )
-    token_out: Literal["weth", "cbeth", "cbbtc", "wsteth", "usdc"] = Field(
+    token_out: Literal["weth", "cbeth", "cbbtc", "wsteth", "usdc", "aero"] = Field(
         ...,
-        description="The asset ID to swap to, one of `weth`, `cbeth`, `cbbtc`, `wsteth`, or `usdc`",
+        description="The asset ID to swap to, one of `weth`, `cbeth`, `cbbtc`, `wsteth`, `usdc`, or `aero`",
     )
     fee: int = Field(description="Uniswap v3 pool fee in hundredths of a bip, e.g., 3000")
     amount_in: str = Field(
