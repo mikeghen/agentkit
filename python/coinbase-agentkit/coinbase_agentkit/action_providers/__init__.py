@@ -20,6 +20,7 @@ from .twitter.twitter_action_provider import TwitterActionProvider, twitter_acti
 from .wallet.wallet_action_provider import WalletActionProvider, wallet_action_provider
 from .weth.weth_action_provider import WethActionProvider, weth_action_provider
 from .wow.wow_action_provider import WowActionProvider, wow_action_provider
+from .uniswap_v3 import UniswapV3ActionProvider, uniswap_v3_action_provider
 
 __all__ = [
     "Action",
@@ -43,6 +44,8 @@ __all__ = [
     "superfluid_action_provider",
     "TwitterActionProvider",
     "twitter_action_provider",
+    "UniswapV3ActionProvider",
+    "uniswap_v3_action_provider",
     "WalletActionProvider",
     "wallet_action_provider",
     "WethActionProvider",

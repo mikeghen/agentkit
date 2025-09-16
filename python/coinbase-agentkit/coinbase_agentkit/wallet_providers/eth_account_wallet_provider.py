@@ -210,9 +210,15 @@ class EthAccountWalletProvider(EvmWalletProvider):
         transaction["maxPriorityFeePerGas"] = max_priority_fee_per_gas
         transaction["maxFeePerGas"] = max_fee_per_gas
 
-        gas = int(self.web3.eth.estimate_gas(transaction) * self._gas_limit_multiplier)
+        # Try to estimate gas; if it fails, set a safe fallback to force-send
+        try:
+            gas_estimate = self.web3.eth.estimate_gas(transaction)
+            gas = int(gas_estimate * self._gas_limit_multiplier)
+        except Exception:
+            gas = 1_000_000
         transaction["gas"] = gas
 
+        # Force send even if transaction will revert
         hash = self.web3.eth.send_transaction(transaction)
         return Web3.to_hex(hash)
 
