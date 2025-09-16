@@ -8,8 +8,22 @@ from ...network import Network
 from ...wallet_providers import EvmWalletProvider
 from ..action_decorator import create_action
 from ..action_provider import ActionProvider
-from .constants import UNISWAP_QUOTER_ABI, UNISWAP_SWAP_ROUTER_ABI, UNISWAP_V3_ADDRESSES
+from ..erc20.constants import ERC20_ABI
+from .constants import (
+    ASSET_ADDRESSES,
+    SUPPORTED_NETWORKS,
+    UNISWAP_QUOTER_ABI,
+    UNISWAP_SWAP_ROUTER_ABI,
+    UNISWAP_V3_ADDRESSES,
+)
 from .schemas import ExactInputSingleSchema
+from .utils import (
+    format_amount_from_decimals,
+    format_amount_with_decimals,
+    get_token_balance,
+    get_token_decimals,
+    get_token_symbol,
+)
 
 
 class UniswapV3ActionProvider(ActionProvider[EvmWalletProvider]):
@@ -23,35 +37,68 @@ class UniswapV3ActionProvider(ActionProvider[EvmWalletProvider]):
     def __init__(self) -> None:
         super().__init__("uniswap_v3", [])
 
+    def _get_asset_address(self, network: Network, asset_id: str) -> str:
+        """Get the asset address based on network and asset ID."""
+        return ASSET_ADDRESSES[network.network_id][asset_id]
+
     @create_action(
         name="swap_exact_input_single",
-        description=(
-            "Perform an exact input swap on Uniswap v3 using SwapRouter.exactInputSingle.\n"
-            "Inputs: token_in, token_out, fee, amount_in, recipient (optional).\n"
-            "Uses QuoterV2 to estimate output and sets amountOutMinimum to ~99% of quote."
-        ),
+        description="""
+This tool allows swapping tokens on Uniswap v3.
+It takes:
+- token_in: The asset to swap from, one of `weth`, `cbeth`, `cbbtc`, `wsteth`, or `usdc`
+- token_out: The asset to swap to, one of `weth`, `cbeth`, `cbbtc`, `wsteth`, or `usdc`
+- fee: The pool fee tier (e.g., 3000 for 0.3%)
+- amount_in: The amount of input tokens to swap in human-readable format
+    Examples:
+    - 1 WETH
+    - 0.1 WETH
+    - 1000 USDC
+Important notes:
+- Make sure to use the exact amount provided
+- The tokens must be available on the network
+""",
         schema=ExactInputSingleSchema,
     )
     def swap_exact_input_single(self, wallet_provider: EvmWalletProvider, args: dict[str, Any]) -> str:
         """Execute an exact input swap via Uniswap v3 SwapRouter."""
         try:
-            validated = ExactInputSingleSchema(**args)
+            validated_args = ExactInputSingleSchema(**args)
+            network = wallet_provider.get_network()
+            
+            # Get token addresses from asset IDs
+            # NOTE: Key errors should be handled here in case someone passes an invalid asset ID
+            token_in_address = self._get_asset_address(network, validated_args.token_in)
+            token_out_address = self._get_asset_address(network, validated_args.token_out)
+            
+            # Get token decimals and convert amount
+            token_in_decimals = get_token_decimals(wallet_provider, token_in_address)
+            amount_in_atomic = format_amount_with_decimals(validated_args.amount_in, token_in_decimals)
 
-            # Resolve router and quoter addresses from local Uniswap v3 addresses mapping by network
-            chain_id = wallet_provider.get_network().chain_id
-            try:
-                numeric_chain_id = int(chain_id)  # handle both str and int inputs
-            except Exception:
-                numeric_chain_id = -1
-            network_key = "base-mainnet" if numeric_chain_id == 8453 else "base-sepolia"
+            # Check wallet balance before proceeding
+            wallet_balance = get_token_balance(wallet_provider, token_in_address)
+            if wallet_balance < amount_in_atomic:
+                human_balance = format_amount_from_decimals(wallet_balance, token_in_decimals)
+                return f"Error: Insufficient balance. You have {human_balance}, but trying to swap {validated_args.amount_in}"
+
+            # Resolve router and quoter addresses from network
+            network_key = network.network_id
             router = UNISWAP_V3_ADDRESSES[network_key]["swap_router_02"]
             quoter = UNISWAP_V3_ADDRESSES[network_key]["uniswap_quoter"]
 
-            recipient = (
-                Web3.to_checksum_address(validated.recipient)
-                if validated.recipient
-                else wallet_provider.get_address()
-            )
+            # Approve Uniswap router to spend tokens
+            token_contract = Web3().eth.contract(address=token_in_address, abi=ERC20_ABI)
+            encoded_data = token_contract.encode_abi("approve", args=[router, amount_in_atomic])
+            params = {
+                "to": token_in_address,
+                "data": encoded_data,
+            }
+            try:
+                approval_tx_hash = wallet_provider.send_transaction(params)
+                approval_receipt = wallet_provider.wait_for_transaction_receipt(approval_tx_hash)
+                print(f"Approval confirmed: {approval_tx_hash}")
+            except Exception as e:
+                return f"Error approving token: {e!s}"
 
             # Use QuoterV2 to fetch an estimated amountOut
             quoted_amount_out = wallet_provider.read_contract(
@@ -60,10 +107,10 @@ class UniswapV3ActionProvider(ActionProvider[EvmWalletProvider]):
                 function_name="quoteExactInputSingle",
                 args=[
                     {
-                        "tokenIn": str(Web3.to_checksum_address(validated.token_in)),
-                        "tokenOut": str(Web3.to_checksum_address(validated.token_out)),
-                        "amountIn": int(validated.amount_in),
-                        "fee": int(validated.fee),
+                        "tokenIn": str(Web3.to_checksum_address(token_in_address)),
+                        "tokenOut": str(Web3.to_checksum_address(token_out_address)),
+                        "amountIn": int(amount_in_atomic),
+                        "fee": int(validated_args.fee),
                         "sqrtPriceLimitX96": 0,
                     }
                 ],
@@ -76,21 +123,23 @@ class UniswapV3ActionProvider(ActionProvider[EvmWalletProvider]):
             except Exception:
                 quoted_amount_out_int = 0
 
-            # Apply a conservative 1% buffer similar to WOW provider usage
+            # NOTE: Apply a 1% slippage tolerance.
+            # NOTE: This could be something that we could make configurable.
+            # for the purposes of this use case, all assets swapped should work with the 1% tolerance.
             amount_out_minimum = (quoted_amount_out_int * 99) // 100 if quoted_amount_out_int > 0 else 0
 
-            # Encode call to exactInputSingle with computed amountOutMinimum and sqrtPriceLimitX96 = 0
+            # Execute the swap
             contract = Web3().eth.contract(address=router, abi=UNISWAP_SWAP_ROUTER_ABI)
-
             data = contract.encode_abi(
                 "exactInputSingle",
                 args=[
                     {
-                        "tokenIn": Web3.to_checksum_address(validated.token_in),
-                        "tokenOut": Web3.to_checksum_address(validated.token_out),
-                        "fee": int(validated.fee),
-                        "recipient": recipient,
-                        "amountIn": int(validated.amount_in),
+                        "tokenIn": Web3.to_checksum_address(token_in_address),
+                        "tokenOut": Web3.to_checksum_address(token_out_address),
+                        "fee": int(validated_args.fee),
+                        # Only allow the wallet address to be the recipient
+                        "recipient": wallet_provider.get_address(),
+                        "amountIn": int(amount_in_atomic),
                         "amountOutMinimum": amount_out_minimum,
                         "sqrtPriceLimitX96": 0,
                     }
@@ -102,24 +151,27 @@ class UniswapV3ActionProvider(ActionProvider[EvmWalletProvider]):
                 "data": data,
             }
 
-            # If tokenIn is the chain native (WETH address not used), user would be providing ETH.
-            # For simplicity, we do not auto-detect. Caller should set approval for ERC20s or wrap ETH beforehand.
-            # If the swap requires msg.value (e.g., swapping ETH->token via WETH path internally),
-            # that is out of scope for this minimal provider.
+            try:
+                swap_tx_hash = wallet_provider.send_transaction(tx_params)
+                swap_receipt = wallet_provider.wait_for_transaction_receipt(swap_tx_hash)
+                print(f"Swap confirmed: {swap_tx_hash}")
+            except Exception as e:
+                return f"Error executing transaction: {e!s}"
 
-            tx_hash = wallet_provider.send_transaction(tx_params)
-            receipt = wallet_provider.wait_for_transaction_receipt(tx_hash)
+            # Get token symbols for user-friendly output
+            token_in_symbol = get_token_symbol(wallet_provider, token_in_address)
+            token_out_symbol = get_token_symbol(wallet_provider, token_out_address)
 
             return (
-                f"Submitted Uniswap v3 exactInputSingle swap.\n"
-                f"Transaction hash: {tx_hash}\n"
-                f"Receipt: {receipt}"
+                f"Swapped {validated_args.amount_in} {token_in_symbol} to {token_out_symbol} on Uniswap v3.\n"
+                f"Transaction hash: {swap_tx_hash}"
             )
         except Exception as e:
-            return f"Error performing exact input swap: {e!s}"
+            return f"Error performing swap: {e!s}"
 
     def supports_network(self, network: Network) -> bool:
-        return network.protocol_family == "evm"
+        """Check if network is supported by Uniswap V3."""
+        return network.protocol_family == "evm" and network.network_id in SUPPORTED_NETWORKS
 
 
 def uniswap_v3_action_provider() -> UniswapV3ActionProvider:

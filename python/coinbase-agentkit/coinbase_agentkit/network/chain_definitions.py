@@ -217,7 +217,7 @@ base = Chain(
     native_currency={"name": "Ether", "symbol": "ETH", "decimals": 18},
     rpc_urls={
         "default": {
-            "http": ["https://mainnet.base.org"],
+            "http": ["https://twilight-muddy-darkness.base-mainnet.quiknode.pro/61121730a2137d53f408a967d481f0bbdde17312"],
         },
     },
     block_explorers={

@@ -1,15 +1,25 @@
 """Schemas for Uniswap v3 swap actions."""
 
+from typing import Literal
 from pydantic import BaseModel, Field
 
 
 class ExactInputSingleSchema(BaseModel):
     """Input schema for performing an exact input swap on Uniswap v3."""
 
-    token_in: str = Field(description="Address of the token to swap from")
-    token_out: str = Field(description="Address of the token to swap to")
+    token_in: Literal["weth", "cbeth", "cbbtc", "wsteth", "usdc"] = Field(
+        ...,
+        description="The asset ID to swap from, one of `weth`, `cbeth`, `cbbtc`, `wsteth`, or `usdc`",
+    )
+    token_out: Literal["weth", "cbeth", "cbbtc", "wsteth", "usdc"] = Field(
+        ...,
+        description="The asset ID to swap to, one of `weth`, `cbeth`, `cbbtc`, `wsteth`, or `usdc`",
+    )
     fee: int = Field(description="Uniswap v3 pool fee in hundredths of a bip, e.g., 3000")
-    amount_in: int = Field(description="Amount of token_in to swap (in wei)")
+    amount_in: str = Field(
+        ...,
+        description="The amount of the input token to swap, e.g. `0.125` weth; `19.99` usdc",
+    )
     recipient: str | None = Field(
         default=None, description="Recipient address; defaults to the wallet address if not set"
     )

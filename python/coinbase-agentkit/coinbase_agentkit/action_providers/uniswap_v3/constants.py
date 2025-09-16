@@ -1,5 +1,7 @@
 """Constants and ABIs for Uniswap v3 SwapRouter interactions."""
 
+SUPPORTED_NETWORKS = ["base-mainnet", "base-sepolia"]
+
 UNISWAP_SWAP_ROUTER_ABI = [
     {
         "inputs": [
@@ -55,6 +57,34 @@ UNISWAP_QUOTER_ABI = [
 ]
 
 # Minimal network addresses for Base networks; extend as needed.
+# Asset addresses - Base Mainnet
+USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+WETH_ADDRESS = "0x4200000000000000000000000000000000000006"
+CBETH_ADDRESS = "0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22"
+CBBTC_ADDRESS = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
+WSTETH_ADDRESS = "0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452"
+
+# Asset addresses - Base Sepolia
+USDC_ADDRESS_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+WETH_ADDRESS_SEPOLIA = "0x4200000000000000000000000000000000000006"
+CBETH_ADDRESS_SEPOLIA = "0x774eD9EDB0C5202dF9A86183804b5D9E99dC6CA3"
+
+# Asset mapping for easy lookup
+ASSET_ADDRESSES = {
+    "base-mainnet": {
+        "usdc": USDC_ADDRESS,
+        "weth": WETH_ADDRESS,
+        "cbeth": CBETH_ADDRESS,
+        "cbbtc": CBBTC_ADDRESS,
+        "wsteth": WSTETH_ADDRESS,
+    },
+    "base-sepolia": {
+        "usdc": USDC_ADDRESS_SEPOLIA,
+        "weth": WETH_ADDRESS_SEPOLIA,
+        "cbeth": CBETH_ADDRESS_SEPOLIA,
+    },
+}
+
 UNISWAP_V3_ADDRESSES = {
     "base-sepolia": {
         "swap_router_02": "0x94cC0AaC535CCDB3C01d6787D6413C739ae12bc4",
