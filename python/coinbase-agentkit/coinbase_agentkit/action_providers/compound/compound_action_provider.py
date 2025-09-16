@@ -122,7 +122,7 @@ class CompoundActionProvider(ActionProvider[EvmWalletProvider]):
         }
         try:
             tx_hash = wallet_provider.send_transaction(params)
-            wallet_provider.wait_for_transaction_receipt(tx_hash, poll_latency=2)
+            wallet_provider.wait_for_transaction_receipt(tx_hash, poll_latency=4)
         except Exception as e:
             return f"Error approving token: {e!s}"
 
@@ -140,7 +140,7 @@ class CompoundActionProvider(ActionProvider[EvmWalletProvider]):
 
         try:
             tx_hash = wallet_provider.send_transaction(params)
-            wallet_provider.wait_for_transaction_receipt(tx_hash, poll_latency=2)
+            wallet_provider.wait_for_transaction_receipt(tx_hash, poll_latency=4)
         except Exception as e:
             return f"Error executing transaction: {e!s}"
 
@@ -241,7 +241,7 @@ class CompoundActionProvider(ActionProvider[EvmWalletProvider]):
 
         try:
             tx_hash = wallet_provider.send_transaction(params)
-            wallet_provider.wait_for_transaction_receipt(tx_hash, poll_latency=2)
+            wallet_provider.wait_for_transaction_receipt(tx_hash, poll_latency=4)
         except Exception as e:
             return f"Error executing transaction: {e!s}"
 
@@ -506,7 +506,7 @@ Important notes:
 
             try:
                 tx_hash = wallet_provider.send_transaction(params)
-                wallet_provider.wait_for_transaction_receipt(tx_hash, poll_latency=2)
+                wallet_provider.wait_for_transaction_receipt(tx_hash, poll_latency=4)
             except Exception as e:
                 return f"Error executing transaction: {e!s}"
 
@@ -577,7 +577,7 @@ Important notes:
             }
             try:
                 tx_hash = wallet_provider.send_transaction(params)
-                wallet_provider.wait_for_transaction_receipt(tx_hash)
+                wallet_provider.wait_for_transaction_receipt(tx_hash, poll_latency=4)
             except Exception as e:
                 return f"Error approving token: {e!s}"
 
@@ -594,7 +594,7 @@ Important notes:
             }
             try:
                 tx_hash = wallet_provider.send_transaction(params)
-                wallet_provider.wait_for_transaction_receipt(tx_hash, poll_latency=2)
+                wallet_provider.wait_for_transaction_receipt(tx_hash, poll_latency=4)
             except Exception as e:
                 return f"Error executing transaction: {e!s}"
 
