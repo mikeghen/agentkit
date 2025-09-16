@@ -119,6 +119,8 @@ PRICE_FEED_ABI = [
 
 # Contract addresses for Compound on Base
 USDC_COMET_ADDRESS = "0xb125E6687d4313864e53df431d5425969c15Eb2F"  # Base mainnet
+WETH_COMET_ADDRESS = "0x46e6b214b524310239732D51387075E0e70970bf"  # Base mainnet
+AERO_COMET_ADDRESS = "0x784efeB622244d2348d4F2522f8860B96fbEcE89"  # Base mainnet
 USDC_COMET_ADDRESS_SEPOLIA = "0x571621Ce60Cebb0c1D442B5afb38B1663C6Bf017"  # Base Sepolia
 
 # Asset addresses - Base Mainnet
@@ -128,6 +130,7 @@ WETH_ADDRESS = "0x4200000000000000000000000000000000000006"
 CBETH_ADDRESS = "0x2Ae3F1Ec7F1F5012CFEab0185bfc7aa3cf0DEc22"
 CBBTC_ADDRESS = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf"
 WSTETH_ADDRESS = "0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452"
+AERO_ADDRESS = "0x940181a94A35A4569E4529A3CDfB74e38FD98631"
 
 # Asset addresses - Base Sepolia
 USDC_ADDRESS_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
@@ -142,6 +145,7 @@ ASSET_ADDRESSES = {
         "cbeth": CBETH_ADDRESS,
         "cbbtc": CBBTC_ADDRESS,
         "wsteth": WSTETH_ADDRESS,
+        "aero": AERO_ADDRESS,
     },
     "base-sepolia": {
         "usdc": USDC_ADDRESS_SEPOLIA,
@@ -150,8 +154,20 @@ ASSET_ADDRESSES = {
     },
 }
 
-# Comet addresses mapping
+# Comet addresses mapping (for backward compatibility - defaults to USDC comet)
 COMET_ADDRESSES = {
     "base-mainnet": USDC_COMET_ADDRESS,
     "base-sepolia": USDC_COMET_ADDRESS_SEPOLIA,
+}
+
+# Token to Comet mapping for deposits based on the asset being deposited
+TOKEN_TO_COMET_MAPPING = {
+    "base-mainnet": {
+        "usdc": USDC_COMET_ADDRESS,
+        "weth": WETH_COMET_ADDRESS,
+        "aero": AERO_COMET_ADDRESS,
+    },
+    "base-sepolia": {
+        "usdc": USDC_COMET_ADDRESS_SEPOLIA,
+    },
 }

@@ -38,7 +38,7 @@ def test_borrow_action_success(compound_wallet, compound_provider):
 
         result = provider.borrow(compound_wallet, input_args)
 
-        assert "Borrowed 1000 USDC from Compound" in result
+        assert "Borrowed 1000.0 USDC from Compound" in result
         assert "Transaction hash: 0xTxHash" in result
         assert "Health ratio changed from Infinity to 2.00" in result
 
@@ -73,7 +73,7 @@ def test_borrow_unhealthy_position(compound_wallet, compound_provider):
 
         result = provider.borrow(compound_wallet, input_args)
 
-        assert "Error: Borrowing 1000 USDC would result in an unhealthy position" in result
+        assert "Error: Borrowing 1000.0 USDC would result in an unhealthy position" in result
         assert "Health ratio would be 0.80" in result
 
 

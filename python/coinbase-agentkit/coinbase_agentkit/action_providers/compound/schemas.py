@@ -12,7 +12,7 @@ class CompoundSupplySchema(BaseModel):
         ...,
         description="The asset ID to supply to the Compound market, one of `weth`, `cbeth`, `cbbtc`, `wsteth`, or `usdc`",
     )
-    amount: str = Field(
+    amount: float = Field(
         ...,
         description="The amount of the asset to supply to the Compound market, e.g. `0.125` weth; `19.99` usdc",
     )
@@ -25,7 +25,7 @@ class CompoundWithdrawSchema(BaseModel):
         ...,
         description="The asset ID to withdraw from the Compound market, one of `weth`, `cbeth`, `cbbtc`, `wsteth`, or `usdc`",
     )
-    amount: str = Field(
+    amount: float = Field(
         ...,
         description="The amount of the asset to withdraw from the Compound market, e.g. `0.125` weth; `19.99` usdc",
     )
@@ -38,7 +38,7 @@ class CompoundBorrowSchema(BaseModel):
         ...,
         description="The asset ID to borrow from the Compound market, either `weth` or `usdc`",
     )
-    amount: str = Field(
+    amount: float = Field(
         ...,
         description="The amount of the asset to borrow from the Compound market, e.g. `0.125` weth; `19.99` usdc",
     )
@@ -51,9 +51,22 @@ class CompoundRepaySchema(BaseModel):
         ...,
         description="The asset ID to repay to the Compound market, either `weth` or `usdc`",
     )
-    amount: str = Field(
+    amount: float = Field(
         ...,
         description="The amount of the asset to repay to the Compound market, e.g. `0.125` weth; `19.99` usdc",
+    )
+
+
+class CompoundDepositSchema(BaseModel):
+    """Input schema for depositing assets to Compound for yield earning."""
+
+    asset_id: Literal["usdc", "weth", "aero"] = Field(
+        ...,
+        description="The asset ID to deposit to the Compound market for yield earning, one of `usdc`, `weth`, or `aero`",
+    )
+    amount: float = Field(
+        ...,
+        description="The amount of the asset to deposit to the Compound market for yield earning, e.g. `0.125` weth; `19.99` usdc; `100.5` aero",
     )
 
 

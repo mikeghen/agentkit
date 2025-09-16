@@ -50,7 +50,7 @@ def test_withdraw_action_success(compound_wallet, compound_provider):
 
         result = provider.withdraw(compound_wallet, input_args)
 
-        assert "Withdrawn 1000 USDC from Compound" in result
+        assert "Withdrawn 1000.0 USDC from Compound" in result
         assert "Transaction hash: 0xTxHash" in result
         assert "Health ratio changed from 2.00 to 3.00" in result
 
@@ -90,12 +90,12 @@ def test_withdraw_insufficient_collateral(compound_wallet, compound_provider):
         mock_get_token_decimals.return_value = token_decimals
         mock_format_amount_with_decimals.return_value = withdraw_amount
         mock_get_collateral_balance.return_value = collateral_balance
-        mock_format_amount_from_decimals.return_value = "500"
+        mock_format_amount_from_decimals.return_value = 500.0
 
         result = provider.withdraw(compound_wallet, input_args)
 
         assert "Error: Insufficient balance" in result
-        assert "Trying to withdraw 1000, but only have 500 supplied" in result
+        assert "Error: Insufficient balance. Trying to withdraw 1000.0, but only have 500.0 supplied" in result
 
 
 def test_withdraw_unhealthy_position(compound_wallet, compound_provider):
@@ -126,7 +126,7 @@ def test_withdraw_unhealthy_position(compound_wallet, compound_provider):
 
         result = provider.withdraw(compound_wallet, input_args)
 
-        assert "Error: Withdrawing 1000 would result in an unhealthy position" in result
+        assert "Error: Withdrawing 1000.0 would result in an unhealthy position" in result
         assert "Health ratio would be 0.80" in result
 
 

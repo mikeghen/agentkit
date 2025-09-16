@@ -54,7 +54,7 @@ def test_repay_action_success(compound_wallet, compound_provider):
 
         result = provider.repay(compound_wallet, input_args)
 
-        assert "Repaid 1000 USDC to Compound" in result
+        assert "Repaid 1000.0 USDC to Compound" in result
         assert "Transaction hash: 0xTxHash" in result
         assert "Health ratio improved from 1.50 to 2.50" in result
 

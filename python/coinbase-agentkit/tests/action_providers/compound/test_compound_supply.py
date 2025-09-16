@@ -64,7 +64,7 @@ def test_supply_action_success(compound_wallet, compound_provider):
         result = provider.supply(compound_wallet, input_args)
 
         # Assert that the supply action returned the expected success message
-        assert "Supplied 1 WETH to Compound" in result
+        assert "Supplied 1.0 WETH to Compound" in result
         assert "Transaction hash: 0xTxHash" in result
         assert "Health ratio changed from 2.00 to 3.00" in result
 
