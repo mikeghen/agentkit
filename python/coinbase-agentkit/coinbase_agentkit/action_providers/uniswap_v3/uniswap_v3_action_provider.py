@@ -95,7 +95,7 @@ Important notes:
             }
             try:
                 approval_tx_hash = wallet_provider.send_transaction(params)
-                approval_receipt = wallet_provider.wait_for_transaction_receipt(approval_tx_hash)
+                approval_receipt = wallet_provider.wait_for_transaction_receipt(approval_tx_hash, poll_latency=2)
                 print(f"Approval confirmed: {approval_tx_hash}")
             except Exception as e:
                 return f"Error approving token: {e!s}"
@@ -153,7 +153,7 @@ Important notes:
 
             try:
                 swap_tx_hash = wallet_provider.send_transaction(tx_params)
-                swap_receipt = wallet_provider.wait_for_transaction_receipt(swap_tx_hash)
+                swap_receipt = wallet_provider.wait_for_transaction_receipt(swap_tx_hash, poll_latency=2)
                 print(f"Swap confirmed: {swap_tx_hash}")
             except Exception as e:
                 return f"Error executing transaction: {e!s}"
