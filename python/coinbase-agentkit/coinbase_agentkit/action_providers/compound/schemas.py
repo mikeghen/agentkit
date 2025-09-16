@@ -70,6 +70,19 @@ class CompoundDepositSchema(BaseModel):
     )
 
 
+class CompoundRedeemSchema(BaseModel):
+    """Input schema for redeeming assets from Compound that were deposited for yield earning."""
+
+    asset_id: Literal["usdc", "weth", "aero"] = Field(
+        ...,
+        description="The asset ID to redeem from the Compound market, one of `usdc`, `weth`, or `aero`",
+    )
+    amount: float = Field(
+        ...,
+        description="The amount of the asset to redeem from the Compound market, e.g. `0.125` weth; `19.99` usdc; `100.5` aero",
+    )
+
+
 class CompoundPortfolioSchema(BaseModel):
     """Input schema for getting portfolio details from Compound."""
 

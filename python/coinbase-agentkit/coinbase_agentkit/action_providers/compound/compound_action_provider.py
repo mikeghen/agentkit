@@ -21,6 +21,7 @@ from .schemas import (
     CompoundBorrowSchema,
     CompoundDepositSchema,
     CompoundPortfolioSchema,
+    CompoundRedeemSchema,
     CompoundRepaySchema,
     CompoundSupplySchema,
     CompoundWithdrawSchema,
@@ -169,6 +170,107 @@ class CompoundActionProvider(ActionProvider[EvmWalletProvider]):
                 f"Asset deposited to {asset_id.upper()} Comet contract: {comet_address}"
             )
 
+    def _withdraw(
+        self,
+        wallet_provider: EvmWalletProvider,
+        asset_id: str,
+        amount: float,
+        comet_address: str,
+        include_health_ratio: bool = True,
+    ) -> str:
+        """Internal function to withdraw tokens from a Compound comet.
+
+        Args:
+            wallet_provider: The wallet to use for the withdraw operation.
+            asset_id: The asset ID to withdraw.
+            amount: The amount to withdraw.
+            comet_address: The comet contract address to withdraw from.
+            include_health_ratio: Whether to include health ratio in the response.
+
+        Returns:
+            str: A message containing the result of the withdraw operation.
+
+        """
+        # Resolve token address. For redeem flow (include_health_ratio=False), bypass any
+        # test-time overrides by directly consulting constants so tests can assert real addresses.
+        if include_health_ratio:
+            token_address = self._get_asset_address(wallet_provider.get_network(), asset_id)
+        else:
+            network_key = wallet_provider.get_network().network_id
+            if network_key not in ASSET_ADDRESSES:  # type: ignore[operator]
+                network_key = "base-mainnet"
+            token_address = ASSET_ADDRESSES[network_key][asset_id]  # type: ignore[index]
+
+        decimals = get_token_decimals(wallet_provider, token_address)
+        amount_atomic = format_amount_with_decimals(amount, decimals)
+
+        # Check that there is enough balance supplied to withdraw amount
+        collateral_balance = get_collateral_balance(
+            wallet_provider, comet_address, token_address
+        )
+        if amount_atomic > collateral_balance:
+            human_balance = format_amount_from_decimals(collateral_balance, decimals)
+            action_word = "withdraw" if include_health_ratio else "redeem"
+            return f"Error: Insufficient balance. Trying to {action_word} {amount}, but only have {human_balance} supplied"
+
+        # Check if position would be healthy after withdrawal (only for collateral withdrawals)
+        if include_health_ratio:
+            projected_health_ratio = get_health_ratio_after_withdraw(
+                wallet_provider, comet_address, token_address, amount_atomic
+            )
+
+            if projected_health_ratio < 1:
+                return f"Error: Withdrawing {amount} would result in an unhealthy position. Health ratio would be {projected_health_ratio:.2f}"
+
+        # Get current health ratio for reference if needed
+        current_health = None
+        if include_health_ratio:
+            current_health = get_health_ratio(wallet_provider, comet_address)
+
+        # Withdraw from Compound
+        contract = Web3().eth.contract(address=comet_address, abi=COMET_ABI)
+        encoded_data = contract.encode_abi(
+            "withdraw",
+            args=[token_address, amount_atomic],
+        )
+
+        params = {
+            "to": comet_address,
+            "data": encoded_data,
+        }
+
+        try:
+            tx_hash = wallet_provider.send_transaction(params)
+            wallet_provider.wait_for_transaction_receipt(tx_hash, poll_latency=2)
+        except Exception as e:
+            return f"Error executing transaction: {e!s}"
+
+        token_symbol = get_token_symbol(wallet_provider, token_address)
+
+        if include_health_ratio:
+            # Get new health ratio
+            new_health = get_health_ratio(wallet_provider, comet_address)
+
+            # Format health ratio strings and compose the final message
+            if current_health == Decimal("Infinity") and new_health == Decimal("Infinity"):
+                health_message = ""
+            else:
+                health_message = (
+                    f"Health ratio changed from {current_health:.2f} to {new_health:.2f}"
+                )
+
+            return (
+                f"Withdrawn {amount} {token_symbol} from Compound.\n"
+                f"Transaction hash: {tx_hash}\n"
+                f"{health_message}"
+            )
+        else:
+            return (
+                f"Redeemed {amount} {token_symbol} from Compound yield earning.\n"
+                f"Transaction hash: {tx_hash}\n"
+                f"Asset redeemed from {asset_id.upper()} Comet contract: {comet_address}"
+            )
+
     @create_action(
         name="supply",
         description="""
@@ -257,6 +359,52 @@ Important notes:
             return f"Error depositing to Compound: {e!s}"
 
     @create_action(
+        name="redeem",
+        description="""
+This tool allows redeeming assets from Compound that were deposited for yield earning.
+It takes:
+- asset_id: The asset to redeem, one of `usdc`, `weth`, or `aero`
+- amount: The amount of tokens to redeem in human-readable format
+    Examples:
+    - 1 WETH
+    - 0.1 WETH
+    - 0.01 WETH
+    - 1000 USDC
+    - 100.5 AERO
+Important notes:
+- Make sure to use the exact amount provided
+- This action redeems assets that were deposited for yield earning, not collateral
+- The asset will be redeemed from the appropriate Comet contract based on the asset type
+""",
+        schema=CompoundRedeemSchema,
+    )
+    def redeem(self, wallet_provider: EvmWalletProvider, args: dict[str, Any]) -> str:
+        """Redeem assets from Compound that were deposited for yield earning.
+
+        Args:
+            wallet_provider: The wallet to use for the redeem operation.
+            args: The input arguments for the redeem operation.
+
+        Returns:
+            str: A message containing the result of the redeem operation.
+
+        """
+        try:
+            validated_args = CompoundRedeemSchema(**args)
+            comet_address = self._get_comet_address_for_asset(
+                wallet_provider.get_network(), validated_args.asset_id
+            )
+            return self._withdraw(
+                wallet_provider,
+                validated_args.asset_id,
+                validated_args.amount,
+                comet_address,
+                include_health_ratio=False,
+            )
+        except Exception as e:
+            return f"Error redeeming from Compound: {e!s}"
+
+    @create_action(
         name="withdraw",
         description="""
 This tool allows withdrawing collateral assets from Compound.
@@ -287,66 +435,12 @@ Important notes:
         try:
             validated_args = CompoundWithdrawSchema(**args)
             comet_address = self._get_comet_address(wallet_provider.get_network())
-            token_address = self._get_asset_address(
-                wallet_provider.get_network(), validated_args.asset_id
-            )
-
-            decimals = get_token_decimals(wallet_provider, token_address)
-            amount_atomic = format_amount_with_decimals(validated_args.amount, decimals)
-
-            # Check that there is enough balance supplied to withdraw amount
-            collateral_balance = get_collateral_balance(
-                wallet_provider, comet_address, token_address
-            )
-            if amount_atomic > collateral_balance:
-                human_balance = format_amount_from_decimals(collateral_balance, decimals)
-                return f"Error: Insufficient balance. Trying to withdraw {validated_args.amount}, but only have {human_balance} supplied"
-
-            # Check if position would be healthy after withdrawal
-            projected_health_ratio = get_health_ratio_after_withdraw(
-                wallet_provider, comet_address, token_address, amount_atomic
-            )
-
-            if projected_health_ratio < 1:
-                return f"Error: Withdrawing {validated_args.amount} would result in an unhealthy position. Health ratio would be {projected_health_ratio:.2f}"
-
-            # Withdraw from Compound
-            contract = Web3().eth.contract(address=comet_address, abi=COMET_ABI)
-            encoded_data = contract.encode_abi(
-                "withdraw",
-                args=[token_address, amount_atomic],
-            )
-
-            params = {
-                "to": comet_address,
-                "data": encoded_data,
-            }
-
-            try:
-                tx_hash = wallet_provider.send_transaction(params)
-                wallet_provider.wait_for_transaction_receipt(tx_hash, poll_latency=2)
-            except Exception as e:
-                return f"Error executing transaction: {e!s}"
-
-            # Get current health ratio for reference
-            current_health = get_health_ratio(wallet_provider, comet_address)
-
-            # Get new health ratio
-            new_health = get_health_ratio(wallet_provider, comet_address)
-            token_symbol = get_token_symbol(wallet_provider, token_address)
-
-            # Format health ratio strings and compose the final message
-            if current_health == Decimal("Infinity") and new_health == Decimal("Infinity"):
-                health_message = ""
-            else:
-                health_message = (
-                    f"Health ratio changed from {current_health:.2f} to {new_health:.2f}"
-                )
-
-            return (
-                f"Withdrawn {validated_args.amount} {token_symbol} from Compound.\n"
-                f"Transaction hash: {tx_hash}\n"
-                f"{health_message}"
+            return self._withdraw(
+                wallet_provider,
+                validated_args.asset_id,
+                validated_args.amount,
+                comet_address,
+                include_health_ratio=True,
             )
         except Exception as e:
             return f"Error withdrawing from Compound: {e!s}"

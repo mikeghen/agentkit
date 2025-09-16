@@ -5,7 +5,9 @@ from pydantic import ValidationError
 
 from coinbase_agentkit.action_providers.compound.schemas import (
     CompoundBorrowSchema,
+    CompoundDepositSchema,
     CompoundPortfolioSchema,
+    CompoundRedeemSchema,
     CompoundRepaySchema,
     CompoundSupplySchema,
     CompoundWithdrawSchema,
@@ -124,6 +126,64 @@ def test_repay_input_model_invalid_asset():
         CompoundRepaySchema(asset_id="cbeth", amount=1000)  # Only weth and usdc allowed
     with pytest.raises(ValidationError):
         CompoundRepaySchema(asset_id="invalid", amount=1000)
+
+
+def test_deposit_input_model_valid():
+    """Test that CompoundDepositSchema schema accepts valid parameters."""
+    valid_inputs = [
+        {"asset_id": "usdc", "amount": 1000.0},
+        {"asset_id": "weth", "amount": 0.5},
+        {"asset_id": "aero", "amount": 100.5},
+    ]
+    for valid_input in valid_inputs:
+        input_model = CompoundDepositSchema(**valid_input)
+        assert input_model.asset_id == valid_input["asset_id"]
+        assert input_model.amount == valid_input["amount"]
+
+
+def test_deposit_input_model_missing_params():
+    """Test that CompoundDepositSchema schema raises error when params are missing."""
+    with pytest.raises(ValidationError):
+        CompoundDepositSchema(amount=1000.0)  # Missing asset_id
+    with pytest.raises(ValidationError):
+        CompoundDepositSchema(asset_id="usdc")  # Missing amount
+
+
+def test_deposit_input_model_invalid_asset():
+    """Test that CompoundDepositSchema schema raises error for invalid asset_id."""
+    with pytest.raises(ValidationError):
+        CompoundDepositSchema(asset_id="cbeth", amount=1000.0)  # Only usdc, weth, aero allowed
+    with pytest.raises(ValidationError):
+        CompoundDepositSchema(asset_id="invalid", amount=1000.0)
+
+
+def test_redeem_input_model_valid():
+    """Test that CompoundRedeemSchema schema accepts valid parameters."""
+    valid_inputs = [
+        {"asset_id": "usdc", "amount": 1000.0},
+        {"asset_id": "weth", "amount": 0.5},
+        {"asset_id": "aero", "amount": 100.5},
+    ]
+    for valid_input in valid_inputs:
+        input_model = CompoundRedeemSchema(**valid_input)
+        assert input_model.asset_id == valid_input["asset_id"]
+        assert input_model.amount == valid_input["amount"]
+
+
+def test_redeem_input_model_missing_params():
+    """Test that CompoundRedeemSchema schema raises error when params are missing."""
+    with pytest.raises(ValidationError):
+        CompoundRedeemSchema(amount=1000.0)  # Missing asset_id
+    with pytest.raises(ValidationError):
+        CompoundRedeemSchema(asset_id="usdc")  # Missing amount
+
+
+def test_redeem_input_model_invalid_asset():
+    """Test that CompoundRedeemSchema schema raises error for invalid asset_id."""
+    with pytest.raises(ValidationError):
+        CompoundRedeemSchema(asset_id="cbeth", amount=1000.0)  # Only usdc, weth, aero allowed
+    with pytest.raises(ValidationError):
+        CompoundRedeemSchema(asset_id="invalid", amount=1000.0)
 
 
 def test_portfolio_input_model_valid():
