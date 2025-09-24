@@ -1,9 +1,16 @@
 """Constants for Compound action provider."""
 
-SUPPORTED_NETWORKS = ["base-mainnet", "base-sepolia"]
+SUPPORTED_NETWORKS = ["base-mainnet", "base-sepolia", "ethereum-sepolia"]
 
 # Compound Comet ABI for interacting with the protocol
 COMET_ABI = [
+    {
+        "inputs": [{"internalType": "address", "name": "account", "type": "address"}],
+        "name": "balanceOf",
+        "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function",
+    },
     {
         "inputs": [
             {"internalType": "address", "name": "asset", "type": "address"},
@@ -137,6 +144,15 @@ USDC_ADDRESS_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
 WETH_ADDRESS_SEPOLIA = "0x4200000000000000000000000000000000000006"
 CBETH_ADDRESS_SEPOLIA = "0x774eD9EDB0C5202dF9A86183804b5D9E99dC6CA3"
 
+# Asset addresses - Ethereum Sepolia
+USDC_ADDRESS_ETH_SEPOLIA = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238"
+WETH_ADDRESS_ETH_SEPOLIA = "0x2D5ee574e710219a521449679A4A7f2B43f046ad"
+COMP_ADDRESS_ETH_SEPOLIA = "0xA6c8D1c55951e8AC44a0EaA959Be5Fd21cc07531"
+
+# Asset addresses - ETH Sepolia
+USDC_COMET_ADDRESS_ETH_SEPOLIA = "0xAec1F48e02Cfb822Be958B68C7957156EB3F0b6e"
+WETH_COMET_ADDRESS_ETH_SEPOLIA = "0x2943ac1216979aD8dB76D9147F64E61adc126e96"
+
 # Asset mapping for easy lookup
 ASSET_ADDRESSES = {
     "base-mainnet": {
@@ -152,12 +168,18 @@ ASSET_ADDRESSES = {
         "weth": WETH_ADDRESS_SEPOLIA,
         "cbeth": CBETH_ADDRESS_SEPOLIA,
     },
+    "ethereum-sepolia": {
+        "usdc": USDC_ADDRESS_ETH_SEPOLIA,
+        "weth": WETH_ADDRESS_ETH_SEPOLIA,
+        "comp": COMP_ADDRESS_ETH_SEPOLIA,
+    }
 }
 
 # Comet addresses mapping (for backward compatibility - defaults to USDC comet)
 COMET_ADDRESSES = {
     "base-mainnet": USDC_COMET_ADDRESS,
     "base-sepolia": USDC_COMET_ADDRESS_SEPOLIA,
+    "ethereum-sepolia": USDC_COMET_ADDRESS_ETH_SEPOLIA,
 }
 
 # Token to Comet mapping for deposits based on the asset being deposited
@@ -170,4 +192,8 @@ TOKEN_TO_COMET_MAPPING = {
     "base-sepolia": {
         "usdc": USDC_COMET_ADDRESS_SEPOLIA,
     },
+    "ethereum-sepolia": {
+        "usdc": USDC_COMET_ADDRESS_ETH_SEPOLIA,
+        "weth": WETH_COMET_ADDRESS_ETH_SEPOLIA,
+    }
 }

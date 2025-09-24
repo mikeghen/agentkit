@@ -117,6 +117,19 @@ def get_collateral_balance(
         args=[wallet.get_address(), asset_address],
     )
 
+def get_base_asset_balance(wallet: EvmWalletProvider, compound_address: str) -> int:
+    """Get the balance of the base asset for a wallet using wallet.read_contract.
+
+    Args:
+        wallet: The wallet to check the balance for.
+        compound_address: The address of the Compound market.
+
+    Returns:
+        int: The balance of the base asset in atomic units.
+
+    """
+    return wallet.read_contract(compound_address, COMET_ABI, "balanceOf", args=[wallet.get_address()])
+
 
 def get_borrow_details(wallet: EvmWalletProvider, compound_address: str) -> dict[str, Any]:
     """Get the borrow amount, token symbol, and price for a wallet's position.

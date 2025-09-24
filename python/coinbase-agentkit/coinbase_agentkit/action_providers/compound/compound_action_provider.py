@@ -31,6 +31,7 @@ from .utils import (
     format_amount_with_decimals,
     get_base_token_address,
     get_collateral_balance,
+    get_base_asset_balance,
     get_health_ratio,
     get_health_ratio_after_borrow,
     get_health_ratio_after_withdraw,
@@ -159,7 +160,7 @@ class CompoundActionProvider(ActionProvider[EvmWalletProvider]):
                 )
 
             return (
-                f"Supplied {amount} {token_symbol} to Compound.\n"
+                f"Supplied {amount} {token_symbol} to Compound comet contract {comet_address}.\n"
                 f"Transaction hash: {tx_hash}\n"
                 f"{health_message}"
             )
@@ -192,7 +193,7 @@ class CompoundActionProvider(ActionProvider[EvmWalletProvider]):
 
         """
         # Resolve token address. For redeem flow (include_health_ratio=False), bypass any
-        # test-time overrides by directly consulting constants so tests can assert real addresses.
+        # test-time overrides by directly consulting constants so tests can assert real addresses.)
         if include_health_ratio:
             token_address = self._get_asset_address(wallet_provider.get_network(), asset_id)
         else:
@@ -205,13 +206,37 @@ class CompoundActionProvider(ActionProvider[EvmWalletProvider]):
         amount_atomic = format_amount_with_decimals(amount, decimals)
 
         # Check that there is enough balance supplied to withdraw amount
-        collateral_balance = get_collateral_balance(
-            wallet_provider, comet_address, token_address
-        )
-        if amount_atomic > collateral_balance:
-            human_balance = format_amount_from_decimals(collateral_balance, decimals)
+        # For redemptions (include_health_ratio=False), check if this is the base asset
+        if not include_health_ratio:
+            base_token_address = get_base_token_address(wallet_provider, comet_address)
+            if token_address.lower() == base_token_address.lower():
+                # This is a base asset redemption, use base asset balance
+                available_balance = get_base_asset_balance(wallet_provider, comet_address)
+                balance_type = "base asset"
+            else:
+                # This is a collateral asset redemption, use collateral balance
+                available_balance = get_collateral_balance(
+                    wallet_provider, comet_address, token_address
+                )
+                balance_type = "collateral"
+        else:
+            # For withdrawals (include_health_ratio=True), always use collateral balance
+            available_balance = get_collateral_balance(
+                wallet_provider, comet_address, token_address
+            )
+            balance_type = "collateral"
+
+        if amount_atomic > available_balance:
+            human_balance = format_amount_from_decimals(available_balance, decimals)
             action_word = "withdraw" if include_health_ratio else "redeem"
-            return f"Error: Insufficient balance. Trying to {action_word} {amount}, but only have {human_balance} supplied"
+            return (
+                f"Error: Insufficient balance. Trying to {action_word} {amount}, but only have {human_balance} supplied to comet contract {comet_address}\n"
+                f"Debug info:\n"
+                f"- Token address: {token_address}\n" 
+                f"- Amount atomic: {amount_atomic}\n"
+                f"- {balance_type.title()} balance atomic: {available_balance}\n"
+                f"- Decimals: {decimals}"
+            )
 
         # Check if position would be healthy after withdrawal (only for collateral withdrawals)
         if include_health_ratio:

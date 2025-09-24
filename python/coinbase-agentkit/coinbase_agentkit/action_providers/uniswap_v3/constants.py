@@ -1,6 +1,6 @@
 """Constants and ABIs for Uniswap v3 SwapRouter interactions."""
 
-SUPPORTED_NETWORKS = ["base-mainnet", "base-sepolia"]
+SUPPORTED_NETWORKS = ["base-mainnet", "base-sepolia", "ethereum-sepolia"]
 
 UNISWAP_SWAP_ROUTER_ABI = [
     {
@@ -70,6 +70,11 @@ USDC_ADDRESS_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
 WETH_ADDRESS_SEPOLIA = "0x4200000000000000000000000000000000000006"
 CBETH_ADDRESS_SEPOLIA = "0x774eD9EDB0C5202dF9A86183804b5D9E99dC6CA3"
 
+# Asset addresses - ETH Sepolia
+USDC_ADDRESS_ETH_SEPOLIA = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238"
+WETH_ADDRESS_ETH_SEPOLIA = "0x2D5ee574e710219a521449679A4A7f2B43f046ad"
+COMP_ADDRESS_ETH_SEPOLIA = "0xA6c8D1c55951e8AC44a0EaA959Be5Fd21cc07531"
+
 # Asset mapping for easy lookup
 ASSET_ADDRESSES = {
     "base-mainnet": {
@@ -85,6 +90,11 @@ ASSET_ADDRESSES = {
         "weth": WETH_ADDRESS_SEPOLIA,
         "cbeth": CBETH_ADDRESS_SEPOLIA,
     },
+    "ethereum-sepolia": {
+        "usdc": USDC_ADDRESS_ETH_SEPOLIA,
+        "weth": WETH_ADDRESS_ETH_SEPOLIA,
+        "comp": COMP_ADDRESS_ETH_SEPOLIA,
+    }
 }
 
 UNISWAP_V3_ADDRESSES = {
@@ -94,8 +104,12 @@ UNISWAP_V3_ADDRESSES = {
     },
     "base-mainnet": {
         "swap_router_02": "0x2626664c2603336E57B271c5C0b26F421741e481",
-        "uniswap_quoter": "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a",
+        "uniswap_quoter": "0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E",
     },
+    "ethereum-sepolia": {
+        "swap_router_02": "0x94cC0AaC535CCDB3C01d6787D6413C739ae12bc4",
+        "uniswap_quoter": "0xEd1f6473345F45b75F8179591dd5bA1888cf2FB3",
+    }
 }
 
 
