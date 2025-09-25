@@ -46,8 +46,8 @@ class UniswapV3ActionProvider(ActionProvider[EvmWalletProvider]):
         description="""
 This tool allows swapping tokens on Uniswap v3.
 It takes:
-- token_in: The asset to swap from, one of `weth`, `cbeth`, `cbbtc`, `wsteth`, or `usdc`
-- token_out: The asset to swap to, one of `weth`, `cbeth`, `cbbtc`, `wsteth`, or `usdc`
+- token_in: The asset to swap from, one of `weth`, `cbeth`, `cbbtc`, `wsteth`, `usdc`, `aero`, `comp`, or `wbtc`
+- token_out: The asset to swap to, one of `weth`, `cbeth`, `cbbtc`, `wsteth`, `usdc`, `aero`, `comp`, or `wbtc`
 - fee: The pool fee tier (e.g., 3000 for 0.3%)
 - amount_in: The amount of input tokens to swap in human-readable format
     Examples:
