@@ -109,7 +109,8 @@ UNISWAP_V3_ADDRESSES = {
         "uniswap_quoter": "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a",
     },
     "ethereum-sepolia": {
-        "swap_router_02": "0x3bFA4769FB09eefC5a80d6E87c3B9C650f7Ae48E",
+        # NOTE: CompComm Hack - We use the Vault Manager address for the Swap Router address for ETH Sepolia
+        "swap_router_02": "0x4cef30B8DA9db30D7CEBAd0bD86f82B9489B1d36",
         "uniswap_quoter": "0xEd1f6473345F45b75F8179591dd5bA1888cf2FB3",
     }
 }
